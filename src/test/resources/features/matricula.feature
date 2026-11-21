@@ -1,28 +1,31 @@
-Feature: : Matricula de cursos
+# language: es
+Característica: Matrícula del alumno
   Como alumno de CIBERTEC
-  Quiero matricularme en mis cursos
-  Para llevarlos en el ciclo
+  Quiero cotizar, matricularme y pagar mis cursos
+  Para asegurar mi matrícula en el periodo académico
 
-  Scenario: Matricula valida con descuento por promedio y anulacion
-    Given  que Ana consulta la API de matricula
-    When se matricula con el codigo "i202610001" en el curso "PS3511"
-    Then el codigo de respuesta es 201
-    And el monto de la matricula es 288,0
-    And el estado de la matricula es "REGISTRADA"
-    When anula es matricula
-    Then el codigo de respuesta es 200
-    And el estado de la matricula es "ANULADA"
+  Antecedentes:
+    Dado que el alumno "i202610002" inicia sesión con la contraseña "Cibertec2026"
 
-  Scenario Outline: Matricula rechazada por <motivo>
-    Given  que Ana consulta la API de matricula
-    When se matricula por codigo "<alumno>" en el curso "<curso>"
-    Then el codigo de respuesta es <status>
-    And el codigo de error es "<codigo>"
-    Examples:
-      | motivo             | alumno     | curso  | status | codigo               |
-      | deuda              | i202610004 | PS5511 | 422    | ALUMNO_CON_DEUDA     |
-      | duplicada          | i202610003 | IA5513 | 409    | MATRICULA_DUPLICADA  |
-      | falta de vacantes  | i202610001 | IA5513 | 409    | SIN_VACANTES         |
-      | cruce de horario   | i202610002 | QA5517 | 409    | CRUCE_HORARIO        |
-      | límite de créditos | i202610005 | TS5514 | 422    | LIMITE_CREDITOS      |
-      | alumno inexistente | i999999999 | PS5511 | 404    | ALUMNO_NO_ENCONTRADO |
+  Escenario: Cotizar el curso de tu fila
+    Cuando cotiza el curso "BD5410"
+    Entonces el codigo de respuesta es 200
+    Y el monto total cotizado es 432.0
+
+  Escenario: Matricularse y pagar el curso de tu fila
+    Cuando se matricula en el curso "BD5410"
+    Entonces el codigo de respuesta es 201
+    Y el estado de la matrícula es "REGISTRADA"
+    Y el monto de la matrícula es 432.0
+    Y la respuesta cumple el esquema "matricula.json"
+    Cuando paga la matrícula con el método "YAPE"
+    Entonces el codigo de respuesta es 200
+    Y el estado de la matrícula es "PAGADA"
+    Y la fecha de pago está presente
+    Y en la lista de pagos existe el pago de la matrícula con método "YAPE" y formato de operación válido
+
+  Escenario: Regla de negocio que debe fallar
+    Cuando intenta consultar la constancia del alumno "i202610003"
+    Entonces el codigo de respuesta es 403
+    Y el codigo de error es "ACCESO_DENEGADO"
+    Y la respuesta cumple el esquema "error.json"
